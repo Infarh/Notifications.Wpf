@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
@@ -10,55 +8,36 @@ namespace Notification.Wpf.Utils
 {
     internal class VisualTreeHelperExtensions
     {
+        private static List<Visual> _ActiveControls = new List<Visual>();
 
-        private static List<Visual> _activeControls = new List<Visual>();
-
-        public static T GetParent<T>(DependencyObject child) where T : DependencyObject
-        {
-            var parent = VisualTreeHelper.GetParent(child);
-
-            if (parent == null) return null;
-
-            var tParent = parent as T;
-            if (tParent != null)
-            {
-                return tParent;
-            }
-
-            return GetParent<T>(parent);
-        }
+        public static T GetParent<T>(DependencyObject child) where T : DependencyObject => VisualTreeHelper.GetParent(child) is { } parent ? parent as T ?? GetParent<T>(parent) : null;
 
         public static int GetActiveNotificationCount(Visual element)
         {
-            if (element == null)
-            {
-                throw new ArgumentNullException(String.Format("Element {0} is null !", element.ToString()));
-            }
+            if (element is null)
+                throw new ArgumentNullException(nameof(element));
 
-            _activeControls.Clear();
+            _ActiveControls.Clear();
 
             GetControlsList(element, 0);
 
-            var count = _activeControls.Count(x => x.GetType().Name.Equals("Notification"));
+            var count = _ActiveControls.Count(x => x.GetType().Name.Equals("Notification"));
 
             return count;
         }
 
         private static void GetControlsList(Visual control, int level)
         {
-            const int indent = 4;
-            int ChildNumber = VisualTreeHelper.GetChildrenCount(control);
+            var ChildNumber = VisualTreeHelper.GetChildrenCount(control);
 
-            for (int i = 0; i <= ChildNumber - 1; i++)
+            for (var i = 0; i <= ChildNumber - 1; i++)
             {
-                Visual v = (Visual)VisualTreeHelper.GetChild(control, i);
+                var child = (Visual)VisualTreeHelper.GetChild(control, i);
 
-                _activeControls.Add(v);
+                _ActiveControls.Add(child);
 
-                if (VisualTreeHelper.GetChildrenCount(v) > 0)
-                {
-                    GetControlsList(v, level + 1);
-                }
+                if (VisualTreeHelper.GetChildrenCount(child) > 0) 
+                    GetControlsList(child, level + 1);
             }
         }
 
